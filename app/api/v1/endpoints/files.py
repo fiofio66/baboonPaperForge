@@ -1,25 +1,20 @@
 """
-File handling endpoints — zip extraction & directory browser.
-
-POST /api/v1/files/extract-zip  — extract a zip to workdir, find main.tex
-POST /api/v1/files/open-dir     — trigger native OS directory picker
+File upload & extract endpoint — accepts uploaded ZIP, saves to workdir, extracts.
 """
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 
 from app.core.config import settings
 from app.services.downloader import extract_archive
 
 router = APIRouter(prefix="/files", tags=["files"])
-
-
-class ExtractRequest(BaseModel):
-    zip_path: str
 
 
 class ExtractResponse(BaseModel):
@@ -30,28 +25,46 @@ class ExtractResponse(BaseModel):
 
 
 @router.post("/extract-zip", response_model=ExtractResponse)
-async def extract_zip(payload: ExtractRequest):
-    """Extract a ZIP archive and find the main .tex file inside.
+async def extract_zip(file: UploadFile = File(...)):
+    """Accept an uploaded ZIP archive, save to workdir, extract, find main.tex.
 
-    Templates from journals are typically distributed as .zip files.
-    This extracts them into the workdir and locates the entry point.
+    Use this from the frontend file picker — the browser sends the actual
+    file bytes, not just a filename.
     """
-    zip_path = Path(payload.zip_path)
-    if not zip_path.exists():
-        raise HTTPException(404, f"File not found: {zip_path}")
-    if not zip_path.suffix.lower() in (".zip", ".gz", ".tgz", ".bz2", ".xz"):
-        raise HTTPException(400, "Only .zip / .tar.gz / .tar.bz2 / .tar.xz archives are supported")
+    if not file.filename:
+        raise HTTPException(400, "No file provided")
 
+    fname = file.filename.lower()
+    if not any(fname.endswith(ext) for ext in (".zip", ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz")):
+        raise HTTPException(400, f"不支持的格式：{file.filename}。仅支持 .zip / .tar.gz / .tar.bz2 / .tar.xz")
+
+    # Save uploaded file to workdir
     workdir = Path(settings.TEMPLATE_WORKDIR).resolve()
-    safe_name = zip_path.stem.split(".")[0]  # remove .zip / .tar
-    # Sanitize: remove version numbers etc
-    safe_name = safe_name.replace(" ", "_")[:64]
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    # Sanitize destination name
+    safe_name = Path(file.filename).stem.split(".")[0].replace(" ", "_")[:64]
     dest = workdir / safe_name
 
+    # Save uploaded bytes to temp file first
+    tmp = workdir / file.filename
     try:
-        extract_dir = extract_archive(zip_path, dest)
+        with open(tmp, "wb") as f:
+            while chunk := await file.read(1024 * 1024):
+                f.write(chunk)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise HTTPException(500, "文件保存失败，请重试")
+
+    # Extract
+    try:
+        extract_dir = extract_archive(tmp, dest)
     except ValueError as e:
+        tmp.unlink(missing_ok=True)
         raise HTTPException(400, str(e))
+
+    # Clean up temp archive
+    tmp.unlink(missing_ok=True)
 
     # Find main.tex
     tex_files = sorted(

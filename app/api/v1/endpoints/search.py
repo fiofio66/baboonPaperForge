@@ -1,14 +1,14 @@
 """
-Search Agent API endpoints.
+模板搜索与下载 API
 
-GET  /api/v1/search/suggest?q=iotj  → suggestions list (instant)
-POST /api/v1/search/start            → download best match
+GET  /api/v1/search/suggest?q=iotj     — 实时建议（即时）
+POST /api/v1/search/start               — 搜索 → 下载 → 解压（同步等待）
 """
 
 from __future__ import annotations
 
-import asyncio
 import logging
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.session import get_db
 from app.services.search_service import list_all_journals, llm_resolve_query, match_all, search_template_links
+from app.services.downloader import download_and_extract
 from app.services import task_service, template_service
 
 logger = logging.getLogger(__name__)
@@ -26,59 +27,73 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.get("/suggest")
-async def suggest_journals(q: str = Query(..., min_length=1, description="Partial journal name or abbreviation")):
-    """Get matching journal suggestions as you type.
-
-    Returns a list of {id, name, match_count}.
-    First tries exact alias match. Falls back to LLM resolution if nothing found.
-    """
-    # 1. Direct match against alias DB
+async def suggest_journals(q: str = Query(..., min_length=1)):
+    """输入期刊名或缩写，返回匹配列表"""
     results = match_all(q)
-    if results:
-        return [
-            {"id": r["id"], "name": r["name"], "match": "direct"}
-            for r in results[:8]
-        ]
-
-    # 2. No direct match — return empty, frontend shows "try full name"
-    return []
+    return [
+        {"id": r["id"], "name": r["name"], "match": "direct"}
+        for r in results[:8]
+    ]
 
 
 @router.get("/journals")
 async def list_journals():
-    """List all known journal templates for browsing."""
+    """列出所有已知期刊模板"""
     return list_all_journals()
 
 
 # ---------------------------------------------------------------------------
-# Search + download (with optional LLM resolve)
+# 搜索 + 下载
 # ---------------------------------------------------------------------------
 class SearchStartRequest(BaseModel):
     journal_name: str = Field(..., max_length=256, examples=["iotj"])
-    template_format: str = Field(default="latex", max_length=16, examples=["latex"])
+    template_format: str = Field(default="latex", max_length=16)
     user_config_id: str | None = Field(None)
-    use_llm_resolve: bool = Field(True, description="Use LLM to resolve abbreviations")
+    use_llm_resolve: bool = Field(True)
 
 
 class SearchStartResponse(BaseModel):
     task_id: str
     status: str
     message: str
+    journal_resolved: str | None = None
+    found_urls: list[str] = []
+    download_path: str | None = None
+    extract_dir: str | None = None
+    error: str | None = None
 
 
 @router.post("/start", response_model=SearchStartResponse)
 async def start_search(payload: SearchStartRequest, db: AsyncSession = Depends(get_db)):
-    """Search & download a template. Optionally uses LLM to resolve abbreviations."""
-    journal_name = payload.journal_name
+    """搜索并下载模板。同步执行，直接返回结果。
 
-    # If LLM resolve is enabled and not a direct match
-    if payload.use_llm_resolve and not match_all(journal_name):
+    1. 别名匹配 → 获取下载链接
+    2. 如果无匹配 + 开启了 LLM 解析 → 用大模型将缩写解析为全称 → 再次匹配
+    3. 从 CTAN 镜像下载压缩包 → 解压到 workdir
+    4. 创建 TemplateMetadata 记录
+    """
+    journal_name = payload.journal_name.strip()
+    if not journal_name:
+        raise HTTPException(400, "请输入期刊名称")
+
+    user_id = UUID(payload.user_config_id) if payload.user_config_id else None
+    task = await task_service.create_task(
+        db, journal_name=journal_name,
+        template_format=payload.template_format, user_config_id=user_id,
+    )
+    await task_service.transition_task_status(db, task, "searching")
+
+    # Step 1: 直接别名匹配
+    matches = match_all(journal_name)
+    resolved_name = journal_name
+
+    # Step 2: 无匹配 → LLM 解析
+    if not matches and payload.use_llm_resolve:
         llm_config = None
         if payload.user_config_id:
             from app.services.user_config_service import get_user_config_with_llm_configs
-            import uuid
             try:
-                uid = uuid.UUID(payload.user_config_id)
+                uid = UUID(payload.user_config_id)
                 user = await get_user_config_with_llm_configs(db, uid)
                 if user and user.llm_configs:
                     active = [c for c in user.llm_configs if c.is_active]
@@ -95,72 +110,60 @@ async def start_search(payload: SearchStartRequest, db: AsyncSession = Depends(g
 
         resolved = await llm_resolve_query(journal_name, llm_config)
         if resolved and resolved != journal_name:
-            journal_name = resolved
-            # Re-check match_all with resolved name
-            direct = match_all(journal_name)
-            if not direct:
-                # Still no match, just use the resolved name as-is
-                pass
+            resolved_name = resolved
+            matches = match_all(resolved_name)
 
-    # Create task and run search in background
-    user_id = UUID(payload.user_config_id) if payload.user_config_id else None
-    task = await task_service.create_task(
-        db, journal_name=journal_name, template_format=payload.template_format, user_config_id=user_id
-    )
-    await task_service.transition_task_status(db, task, "searching")
-    task_id_str = str(task.id)
+    # Step 3: 获取下载链接
+    candidates = search_template_links(resolved_name, payload.template_format)
+    if not matches and not candidates:
+        await task_service.transition_task_status(db, task, "failed",
+            error_message=f"未找到「{journal_name}」的模板。试试输入完整期刊名，或手动选择 .tex 文件。")
+        return SearchStartResponse(
+            task_id=str(task.id), status="failed",
+            message=f"未找到「{journal_name}」的模板",
+            journal_resolved=resolved_name if resolved_name != journal_name else None,
+            error="未找到匹配的期刊模板",
+        )
 
-    async def _bg_search():
+    found_urls = [c["url"] for c in candidates[:3]]
+
+    # Step 4: 下载第一个有效链接
+    last_error = ""
+    for url in found_urls:
         try:
-            from app.services.downloader import download_and_extract
-            results = search_template_links(journal_name, payload.template_format)
-            if not results:
-                from app.db.session import async_session_factory
-                async with async_session_factory() as bg_db:
-                    bg_task = await task_service.get_task(bg_db, task.id)
-                    if bg_task:
-                        await task_service.transition_task_status(
-                            bg_db, bg_task, "failed", error_message="No template found for this journal"
-                        )
-                return
+            logger.info("Downloading: %s", url)
+            dl_result = await download_and_extract(url, resolved_name, payload.template_format)
 
-            best = results[0]
-            try:
-                dl_result = await download_and_extract(best["url"], journal_name, payload.template_format)
-                from app.db.session import async_session_factory
-                async with async_session_factory() as bg_db:
-                    bg_task = await task_service.get_task(bg_db, task.id)
-                    if bg_task:
-                        tmpl = await template_service.create_template(
-                            bg_db,
-                            journal_name=journal_name,
-                            template_format=payload.template_format,
-                            download_path=dl_result["extract_dir"],
-                        )
-                        await task_service.update_task(bg_db, bg_task, template_metadata_id=tmpl.id)
-                        await task_service.transition_task_status(bg_db, bg_task, "completed")
-            except Exception as dl_err:
-                from app.db.session import async_session_factory
-                async with async_session_factory() as bg_db:
-                    bg_task = await task_service.get_task(bg_db, task.id)
-                    if bg_task:
-                        await task_service.transition_task_status(
-                            bg_db, bg_task, "failed", error_message=str(dl_err)
-                        )
+            # Create template record
+            tmpl = await template_service.create_template(
+                db,
+                journal_name=resolved_name,
+                template_format=payload.template_format,
+                download_path=dl_result["extract_dir"],
+            )
+            await task_service.update_task(db, task, template_metadata_id=tmpl.id)
+            await task_service.transition_task_status(db, task, "completed")
+
+            return SearchStartResponse(
+                task_id=str(task.id), status="completed",
+                message=f"已下载并解压到 {dl_result['extract_dir']}",
+                journal_resolved=resolved_name if resolved_name != journal_name else None,
+                found_urls=found_urls,
+                download_path=dl_result["archive_path"],
+                extract_dir=dl_result["extract_dir"],
+            )
         except Exception as exc:
-            logger.exception("Background search failed")
-            try:
-                from app.db.session import async_session_factory
-                async with async_session_factory() as bg_db:
-                    bg_task = await task_service.get_task(bg_db, task.id)
-                    if bg_task:
-                        await task_service.transition_task_status(bg_db, bg_task, "failed", error_message=str(exc))
-            except Exception:
-                pass
+            last_error = str(exc)
+            logger.warning("Download failed for %s: %s", url, exc)
+            continue
 
-    asyncio.create_task(_bg_search())
-
+    # All URLs failed
+    await task_service.transition_task_status(db, task, "failed",
+        error_message=f"下载失败：{last_error}")
     return SearchStartResponse(
-        task_id=task_id_str, status="searching",
-        message=f"Searching template for '{journal_name}'. Poll /tasks/{task_id_str} for status."
+        task_id=str(task.id), status="failed",
+        message="所有下载链接均失败",
+        journal_resolved=resolved_name if resolved_name != journal_name else None,
+        found_urls=found_urls,
+        error=f"下载失败：{last_error[:200]}",
     )

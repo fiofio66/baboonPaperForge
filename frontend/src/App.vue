@@ -99,7 +99,8 @@ async function onFilePicked(e) {
   if (f.name.match(/\.(zip|tar\.gz|tgz|tar\.bz2|tar\.xz)$/i)) {
     agentStatus.value={text:t('zipExtracting'),type:'info'}; flash(t('zipHint'))
     try {
-      const r = await api('/files/extract-zip',{method:'POST',body:JSON.stringify({zip_path:f.name})})
+      const form = new FormData(); form.append('file', f)
+      const r = await (await fetch(`${API}/files/extract-zip`, {method:'POST', body:form})).json()
       agentStatus.value={text:`${t('zipReady')} ${r.tex_files.length} .tex`,type:'success'}
       templateForm.download_path = r.main_tex || r.extract_dir
       if (r.main_tex) flash(`✓ ${t('zipReady')}: ${r.main_tex}`)
@@ -139,11 +140,10 @@ async function parseTemplate(tmpl) {
   finally { loading.value=false }
 }
 
-// Search & download
+// Search & download — API now returns results synchronously
 async function searchAndDownload() {
   if (!templateForm.journal_name) return flash(t('fillRequired'),'error')
   loading.value=true; agentStatus.value={text:t('searching'),type:'info'}; flash(t('searchStarted'))
-  setTimeout(()=>flash(t('searchTimeout')), 15000)
   try {
     const r = await api('/search/start',{method:'POST',body:JSON.stringify({
       journal_name:templateForm.journal_name,
@@ -151,37 +151,23 @@ async function searchAndDownload() {
       user_config_id:userConfig.value?.id||null,
       use_llm_resolve:true,
     })})
-    pollResult(r.task_id, 'search')
-  } catch(e) { flash(e.message,'error'); loading.value=false; agentStatus.value={text:'',type:''} }
-}
-
-function pollResult(taskId, mode) {
-  let attempts = 0
-  const max = mode==='pipeline' ? 90 : 120  // pipeline 90s, search 4min
-  const iv = setInterval(async()=>{
-    attempts++
-    try {
-      const task = await api(`/tasks/${taskId}`)
-      if (task.status==='completed'||task.status==='failed') {
-        clearInterval(iv); loading.value=false
-        if (task.status==='completed') {
-          flash(t('searchDone')+' '+(task.output_path||''))
-          templateForm.download_path = task.output_path||''
-          await loadTemplates()
-          const created = await api('/templates',{method:'POST',body:JSON.stringify({
-            journal_name:templateForm.journal_name,
-            template_format:templateForm.template_format,
-            download_path:task.output_path||templateForm.download_path,
-          })})
-          agentStatus.value={text:'解析中...',type:'info'}; await parseTemplate(created)
-        } else {
-          flash(task.error_message||t('downloadFailed'),'error')
-        }
-        agentStatus.value={text:'',type:''}
-      }
-    } catch {}
-    if (attempts>max) { clearInterval(iv); loading.value=false; agentStatus.value={text:'',type:''}; flash(t('downloadFailed'),'error') }
-  }, 2000)
+    loading.value=false
+    if (r.status==='completed') {
+      flash(t('searchDone')+' '+(r.extract_dir||''))
+      templateForm.download_path = r.extract_dir || ''
+      await loadTemplates()
+      // Auto-parse
+      const created = await api('/templates',{method:'POST',body:JSON.stringify({
+        journal_name:r.journal_resolved||templateForm.journal_name,
+        template_format:templateForm.template_format,
+        download_path:r.extract_dir||'',
+      })})
+      agentStatus.value={text:'解析中...',type:'info'}; await parseTemplate(created)
+    } else {
+      flash(r.error||t('downloadFailed'),'error')
+      agentStatus.value={text:'',type:''}
+    }
+  } catch(e) { loading.value=false; flash(e.message||t('downloadFailed'),'error'); agentStatus.value={text:'',type:''} }
 }
 
 // Editor + Preview
