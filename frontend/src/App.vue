@@ -75,8 +75,16 @@ const dict = {
     confirmDelete: '确认删除？',
     previewCopied: '源码已复制到剪贴板',
     searchFailed: '搜索失败，请检查网络或手动选择文件',
-    searchStarted: '搜索已启动，后端多 Agent 协作中...',
+    searchStarted: '正在搜索并下载模板...',
+    searchTimeout: '大文件可能需要 30-60 秒，请耐心等待',
     agentStatus: 'Agent 状态',
+    zipExtracting: '正在解压压缩包...',
+    zipReady: '解压完成：',
+    zipError: '解压失败，请检查文件格式',
+    zipHint: 'LaTeX 模板通常是 .zip 压缩包 — 我们会自动解压',
+    dirChoose: '选择文件夹',
+    choosingDir: '选择下载目录',
+    dirNotSupported: '不支持文件夹选择，请手动输入路径',
   },
   en: {
     tab_template: 'Templates',
@@ -144,8 +152,16 @@ const dict = {
     confirmDelete: 'Confirm delete?',
     previewCopied: 'Source copied',
     searchFailed: 'Search failed. Check your connection or pick a file manually.',
-    searchStarted: 'Search started, multi-agent pipeline running...',
+    searchStarted: 'Searching & downloading...',
+    searchTimeout: 'Large files may take 30-60s. Please wait.',
     agentStatus: 'Agent Status',
+    zipExtracting: 'Extracting archive...',
+    zipReady: 'ZIP extracted:',
+    zipError: 'Failed to extract archive',
+    zipHint: 'LaTeX templates are usually .zip files — we auto-extract.',
+    dirChoose: 'Choose Folder',
+    choosingDir: 'Choose download folder',
+    dirNotSupported: 'Folder picker not supported, type path manually',
   },
 }
 function t(key, params) {
@@ -176,6 +192,7 @@ const userForm = reactive({ user_identifier:'', default_provider:'openai' })
 const downloadPath = ref(localStorage.getItem('baboon_dl_path') || './workdir')
 const selectedFile = ref(null)
 const fileInputRef = ref(null)
+const dirInputRef = ref(null)
 
 // Live preview
 const previewText = ref('')
@@ -198,9 +215,27 @@ async function api(path, opts={}) {
 // File picker
 // ===================================================================
 function triggerFilePicker() { fileInputRef.value?.click() }
-function onFilePicked(e) {
+async function onFilePicked(e) {
   const f = e.target.files[0]
-  if (f) { selectedFile.value = f; templateForm.download_path = f.name }
+  if (!f) return
+  selectedFile.value = f
+  const isZip = f.name.match(/\.(zip|tar\.gz|tgz|tar\.bz2|tar\.xz)$/i)
+  if (isZip) {
+    agentStatus.value={text:t('zipExtracting'),type:'info'}
+    flash(t('zipHint'))
+    try {
+      const resp = await api('/files/extract-zip',{method:'POST',body:JSON.stringify({zip_path:f.name})})
+      agentStatus.value={text:`${t('zipReady')} ${resp.tex_files.length} .tex`,type:'success'}
+      templateForm.download_path = resp.main_tex || resp.extract_dir
+      if (resp.main_tex) flash(`✓ ${t('zipReady')} ${resp.main_tex}`)
+      setTimeout(()=>agentStatus.value={text:'',type:''},3000)
+    } catch(e) {
+      agentStatus.value={text:t('zipError'),type:'error'}
+      templateForm.download_path = f.name
+    }
+  } else {
+    templateForm.download_path = f.name
+  }
 }
 
 // ===================================================================
@@ -264,6 +299,7 @@ async function searchAndDownload() {
   loading.value=true
   agentStatus.value={text:t('searching'),type:'info'}
   flash(t('searchStarted'))
+  setTimeout(() => flash(t('searchTimeout')), 5000)  // delayed hint for slow connections
   try {
     const res = await api('/search/start',{method:'POST',body:JSON.stringify({
       journal_name:templateForm.journal_name,
@@ -299,7 +335,7 @@ function pollSearchResult(taskId) {
         agentStatus.value={text:'',type:''}
       }
     } catch {}
-    if (attempts>30) { clearInterval(poll); loading.value=false; agentStatus.value={text:'',type:''}; flash('Timeout','error') }
+    if (attempts>60) { clearInterval(poll); loading.value=false; agentStatus.value={text:'',type:''}; flash('Timeout — network may be slow','error') }
   },2000)
 }
 
@@ -401,6 +437,23 @@ async function downloadPdf() {
 // Settings
 // ===================================================================
 watch(downloadPath, v=>localStorage.setItem('baboon_dl_path',v))
+function pickDirectory() {
+  const inp = dirInputRef.value
+  if (!inp) return
+  if ('showDirectoryPicker' in window) {
+    window.showDirectoryPicker().then(handle => {
+      // Web API can't give full path — browser sandboxes it
+      // Best we can do: show the handle name and prompt user
+      downloadPath.value = handle.name
+    }).catch(() => {})
+  } else {
+    inp.click()
+  }
+}
+function onDirPicked(e) {
+  const files = e.target.files
+  if (files.length) downloadPath.value = files[0].webkitRelativePath.split('/')[0]
+}
 async function initUser() {
   const s=localStorage.getItem('baboon_user_id')
   if (s) { try { userConfig.value=await api(`/users/${s}`); llmConfigs.value=userConfig.value.llm_configs||[] } catch { localStorage.removeItem('baboon_user_id') } }
@@ -590,7 +643,11 @@ onUnmounted(()=>{ clearTimeout(previewTimer) })
       <div class="card">
         <h3>{{ t('downloadPathLabel') }}</h3>
         <p class="muted" style="margin-bottom:0.5rem">{{ t('downloadPathHint') }}</p>
-        <input v-model="downloadPath" class="input" style="width:100%" />
+        <div class="form-row">
+          <input v-model="downloadPath" class="input" style="flex:1" />
+          <input type="file" ref="dirInputRef" @change="onDirPicked" webkitdirectory directory style="display:none" />
+          <button @click="pickDirectory" class="btn">{{ t('dirChoose') }}</button>
+        </div>
       </div>
       <div class="card">
         <h3>{{ t('llmProviders') }}</h3>

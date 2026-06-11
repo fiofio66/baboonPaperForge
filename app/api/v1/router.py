@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.endpoints import assembler, parser, pipeline, rag, search, tasks, templates, user_configs
+from app.api.v1.endpoints import assembler, files, parser, pipeline, rag, search, tasks, templates, user_configs
 from app.db.session import get_db
 
 router = APIRouter(prefix="", tags=["v1"])
@@ -31,6 +31,7 @@ router.include_router(assembler.router)
 router.include_router(search.router)
 router.include_router(rag.router)
 router.include_router(pipeline.router)
+router.include_router(files.router)
 
 
 # ---------------------------------------------------------------------------

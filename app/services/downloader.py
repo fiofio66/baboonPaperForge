@@ -21,7 +21,7 @@ from app.core.config import settings
 # Constants
 # ---------------------------------------------------------------------------
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
-DOWNLOAD_TIMEOUT = 60.0  # seconds
+DOWNLOAD_TIMEOUT = 180.0  # seconds — many template archives are 10-50MB
 CHUNK_SIZE = 64 * 1024  # 64 KB
 _USER_AGENT = (
     "Mozilla/5.0 (compatible; BaboonPaperForge/0.1; +https://github.com/fiofio66/baboonPaperForge)"
@@ -60,8 +60,11 @@ async def download_file(url: str, dest_dir: Path, filename: str | None = None) -
 
     dest_path = dest_dir / filename
 
-    async with httpx.AsyncClient(timeout=DOWNLOAD_TIMEOUT, headers={"User-Agent": _USER_AGENT},
-                                 follow_redirects=True) as client:
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=30.0, read=DOWNLOAD_TIMEOUT, write=60.0, pool=30.0),
+        headers={"User-Agent": _USER_AGENT},
+        follow_redirects=True,
+    ) as client:
         async with client.stream("GET", url) as resp:
             resp.raise_for_status()
             total = 0
