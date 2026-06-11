@@ -38,6 +38,9 @@ pymupdf>=1.24.0           # PDF parsing (RAG ingestion)
 python-docx>=1.1.0        # Word template parsing
 TexSoup>=0.3.1            # LaTeX AST parsing (zero-token assembler)
 
+# --- RAG Embeddings ---
+sentence-transformers>=3.0.0  # Local embeddings (no API key)
+
 # --- Testing ---
 pytest>=8.0.0
 pytest-asyncio>=0.24.0

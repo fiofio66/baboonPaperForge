@@ -116,7 +116,7 @@ def test_docx_parser_empty_file(tmp_path: Path):
     assert modules[0]["type"] == "title"
 
 
-def test_docx_parser_all_have_anchor_para_index(sample_docx_path: Path):
+def test_docx_parser_all_have_anchor_line(sample_docx_path: Path):
     modules = parse_docx_template(sample_docx_path)
     for m in modules:
-        assert "anchor_para_index" in m, f"Missing anchor_para_index in {m['id']}"
+        assert "anchor_line" in m, f"Missing anchor_line in {m['id']}"
