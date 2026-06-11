@@ -1,15 +1,31 @@
 """
 API v1 router — aggregates all v1 sub-routers.
 
-Current endpoints:
-- GET  /api/v1/health   → health check (DB + overall status)
+Endpoints:
+- GET    /api/v1/health                     → shallow health check
+- GET    /api/v1/health/db                  → deep health check (DB ping)
+- CRUD   /api/v1/templates                  → template metadata
+- CRUD   /api/v1/users + /llm-configs       → user config + BYOK LLM keys
+- CRUD   /api/v1/tasks                      → task lifecycle
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.endpoints import tasks, templates, user_configs
+from app.db.session import get_db
 
 router = APIRouter(prefix="", tags=["v1"])
+
+# ---------------------------------------------------------------------------
+# Sub-routers
+# ---------------------------------------------------------------------------
+router.include_router(templates.router)
+router.include_router(user_configs.router)
+router.include_router(tasks.router)
 
 
 # ---------------------------------------------------------------------------
@@ -20,23 +36,17 @@ async def health_check() -> dict[str, str]:
     """
     Lightweight health check.
     Returns the application name and status.
-    DB connectivity will be added in a subsequent iteration.
     """
     return {"status": "ok", "app": "baboonPaperForge"}
 
 
 @router.get("/health/db")
-async def health_check_db() -> dict[str, str | bool]:
+async def health_check_db(db: AsyncSession = Depends(get_db)) -> dict[str, str | bool]:
     """
-    Deep health check — verifies PostgreSQL connectivity via asyncpg.
+    Deep health check — verifies database connectivity via the active session.
     """
-    from sqlalchemy import text
-
-    from app.db.session import async_session_factory
-
     try:
-        async with async_session_factory() as session:
-            await session.execute(text("SELECT 1"))
+        await db.execute(text("SELECT 1"))
         return {"status": "ok", "database": True}
     except Exception as exc:
         return {"status": "error", "database": False, "detail": str(exc)}
