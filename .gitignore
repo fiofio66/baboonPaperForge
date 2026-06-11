@@ -1,0 +1,130 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+*.manifest
+*.spec
+*.so
+
+# ============================================================
+# Virtual Environments
+# ============================================================
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+
+# ============================================================
+# Sensitive Configuration (CRITICAL — NEVER COMMIT)
+# ============================================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials.json
+service-account.json
+
+# ============================================================
+# IDE & Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================
+# Operating System
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================
+# Databases
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+pgdata/
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+logs/
+*.out
+
+# ============================================================
+# Testing & Coverage
+# ============================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ============================================================
+# Jupyter Notebooks
+# ============================================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ============================================================
+# Docker
+# ============================================================
+docker-compose.override.yml
+
+# ============================================================
+# Project-Specific
+# ============================================================
+# LaTeX compilation artifacts
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.xdv
+
+# Template working directories (runtime)
+workdir/
+output/
+downloads/
+
+# ============================================================
+# Node / Frontend (reserved for future Vue3 frontend)
+# ============================================================
+node_modules/
+.npm/
+dist-frontend/
