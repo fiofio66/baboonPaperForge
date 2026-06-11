@@ -154,14 +154,19 @@ def extract_archive(archive_path: Path, dest_dir: Path | None = None) -> Path:
 
 
 async def download_and_extract(
-    url: str, journal_name: str, template_format: str = "latex"
+    url: str, journal_name: str, template_format: str = "latex",
+    download_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Download and extract a template archive in one step.
 
-    Returns a dict with ``archive_path`` and ``extract_dir``.
+    Args:
+        download_dir: Target directory. Uses settings.TEMPLATE_WORKDIR if None.
     """
-    workdir = Path(settings.TEMPLATE_WORKDIR).resolve()
-    safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", journal_name)[:64]
+    if download_dir:
+        workdir = Path(download_dir).resolve()
+    else:
+        workdir = Path(settings.TEMPLATE_WORKDIR).resolve()
+    safe_name = re.sub(r"[^a-zA-Z0-9一-鿿_-]", "_", journal_name)[:64]
     journal_dir = workdir / safe_name
 
     archive_path = await download_file(url, journal_dir)

@@ -50,6 +50,7 @@ class SearchStartRequest(BaseModel):
     template_format: str = Field(default="latex", max_length=16)
     user_config_id: str | None = Field(None)
     use_llm_resolve: bool = Field(True)
+    download_path: str | None = Field(None, description="用户指定的下载目录")
 
 
 class SearchStartResponse(BaseModel):
@@ -132,7 +133,7 @@ async def start_search(payload: SearchStartRequest, db: AsyncSession = Depends(g
     for url in found_urls:
         try:
             logger.info("Downloading: %s", url)
-            dl_result = await download_and_extract(url, resolved_name, payload.template_format)
+            dl_result = await download_and_extract(url, resolved_name, payload.template_format, download_dir=payload.download_path)
 
             # Create template record
             tmpl = await template_service.create_template(
