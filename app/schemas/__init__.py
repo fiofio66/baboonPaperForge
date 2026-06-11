@@ -1,5 +1,10 @@
 """Pydantic schema re-exports."""
 
+from app.schemas.assemble import (  # noqa: F401
+    AssembleRequest,
+    AssembleResponse,
+    FigureConfig,
+)
 from app.schemas.mapping import (  # noqa: F401
     ModuleConstraint,
     ModuleMapping,
