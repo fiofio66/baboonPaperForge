@@ -1,62 +1,70 @@
 """
-Test search service — scoring, filtering, and workflow state transitions.
+Test search service — built-in mapping + fallback.
 """
 
 import pytest
 
-from app.services.search_service import _score_candidate, search_template_links
+from app.services.search_service import match_journal, search_template_links
 
 
 # ---------------------------------------------------------------------------
-# Scoring tests
+# Built-in mapping
 # ---------------------------------------------------------------------------
-def test_score_archive_direct_link():
-    score = _score_candidate("https://example.com/ieee-template.zip", "IEEE Journal")
-    assert score >= 50, f"Archive link should score >=50, got {score}"
+def test_match_ieee():
+    assert match_journal("IEEE Internet of Things Journal") is not None
 
 
-def test_score_ctan_domain():
-    score = _score_candidate("https://ctan.org/pkg/ieeetran", "IEEE")
-    assert score > 0, f"CTAN link should score positive, got {score}"
+def test_match_acm():
+    assert match_journal("ACM Transactions on Graphics") is not None
 
 
-def test_score_ieee_official_domain():
-    score = _score_candidate(
-        "https://www.ieee.org/publications/templates.zip", "IEEE Internet of Things"
-    )
-    assert score > 30, f"IEEE official domain should score high, got {score}"
+def test_match_elsevier():
+    assert match_journal("Elsevier Information Sciences") is not None
 
 
-def test_score_penalizes_social_media():
-    social = _score_candidate("https://reddit.com/r/latex/comments/template", "IEEE")
-    official = _score_candidate("https://ieee.org/template.zip", "IEEE")
-    assert social < official, f"Social media should score lower: {social} vs {official}"
+def test_match_springer():
+    assert match_journal("Springer Nature") is not None
 
 
-def test_score_github_template():
-    score = _score_candidate(
-        "https://github.com/user/latex-template", "Some Journal"
-    )
-    assert score >= 15, f"GitHub template should score >=15, got {score}"
+def test_match_nature():
+    assert match_journal("Nature Communications") is not None
+
+
+def test_match_neurips():
+    assert match_journal("NeurIPS 2025") is not None
+
+
+def test_match_cvpr():
+    assert match_journal("CVPR 2024") is not None
+
+
+def test_match_ieee_substring():
+    """Fuzzy matching: 'ieee' is a substring of the query."""
+    assert match_journal("IEEE Journal of Something") is not None
+
+
+def test_match_unknown_journal():
+    """An obscure journal not in our mapping."""
+    assert match_journal("Obscure Unknown Journal 12345") is None
 
 
 # ---------------------------------------------------------------------------
-# Live search (requires network; marked optional)
+# URL generation
 # ---------------------------------------------------------------------------
-@pytest.mark.slow
-@pytest.mark.asyncio
-async def test_search_template_returns_results():
-    """Live search should return at least 1 result for a well-known journal."""
-    results = await search_template_links("IEEE Internet of Things Journal", "latex")
+def test_search_ieee_returns_urls():
+    results = search_template_links("IEEE Internet of Things Journal", "latex")
+    assert len(results) > 0
+    # Should use Tsinghua mirror
+    assert any("tsinghua" in r["url"] or "ustc" in r["url"] for r in results)
+    assert results[0]["score"] >= 90
+
+
+def test_search_unknown_fallsback_gracefully():
+    """Even for unknown journals, should return [] without crashing."""
+    results = search_template_links("Totally Fake Journal 99999", "latex")
     assert isinstance(results, list)
-    if results:
-        assert "url" in results[0]
-        assert "score" in results[0]
-        assert results[0]["score"] >= 0
 
 
-@pytest.mark.asyncio
-async def test_search_obscure_journal_graceful():
-    """Searching for gibberish should not crash."""
-    results = await search_template_links("xyznonexistent12345journal", "latex")
+def test_search_word_format():
+    results = search_template_links("IEEE Conference", "docx")
     assert isinstance(results, list)
