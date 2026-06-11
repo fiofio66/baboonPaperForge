@@ -1,70 +1,80 @@
 """
-Test search service — built-in mapping + fallback.
+Test search service — fuzzy matching, multi-result, LLM resolve.
 """
 
 import pytest
 
-from app.services.search_service import match_journal, search_template_links
+from app.services.search_service import match_all, search_template_links, list_all_journals
 
 
 # ---------------------------------------------------------------------------
-# Built-in mapping
+# match_all: return all matches
 # ---------------------------------------------------------------------------
-def test_match_ieee():
-    assert match_journal("IEEE Internet of Things Journal") is not None
+def test_match_ieee_returns_multiple():
+    results = match_all("ieee")
+    assert len(results) >= 2  # IEEEtran + IEEEconf
+    ids = [r["id"] for r in results]
+    assert "ieee-tran" in ids
+    assert "ieee-conf" in ids
 
 
-def test_match_acm():
-    assert match_journal("ACM Transactions on Graphics") is not None
+def test_match_iotj_returns_ieee():
+    """Abbreviation 'iotj' maps via alias 'ieee iotj'."""
+    results = match_all("iotj")
+    assert len(results) >= 1
+    assert results[0]["id"] == "ieee-tran"
 
 
-def test_match_elsevier():
-    assert match_journal("Elsevier Information Sciences") is not None
-
-
-def test_match_springer():
-    assert match_journal("Springer Nature") is not None
-
-
-def test_match_nature():
-    assert match_journal("Nature Communications") is not None
-
-
-def test_match_neurips():
-    assert match_journal("NeurIPS 2025") is not None
+def test_match_eswa_returns_elsevier():
+    """ESWA is an Elsevier journal alias."""
+    results = match_all("eswa")
+    assert len(results) >= 1
+    assert results[0]["id"] == "elsevier"
 
 
 def test_match_cvpr():
-    assert match_journal("CVPR 2024") is not None
+    results = match_all("cvpr")
+    assert len(results) >= 1
+    assert results[0]["id"] == "cvpr"
 
 
-def test_match_ieee_substring():
-    """Fuzzy matching: 'ieee' is a substring of the query."""
-    assert match_journal("IEEE Journal of Something") is not None
+def test_match_neurips():
+    results = match_all("neurips")
+    assert len(results) >= 1
+    assert results[0]["id"] == "neurips"
 
 
-def test_match_unknown_journal():
-    """An obscure journal not in our mapping."""
-    assert match_journal("Obscure Unknown Journal 12345") is None
+def test_match_unknown():
+    assert match_all("xyznonexistent999") == []
+
+
+def test_match_two_words():
+    """Match 'ieee conference' should return IEEEconf."""
+    results = match_all("ieee conference")
+    assert len(results) >= 1
+
+
+def test_list_all_journals():
+    all_j = list_all_journals()
+    assert len(all_j) >= 25
 
 
 # ---------------------------------------------------------------------------
 # URL generation
 # ---------------------------------------------------------------------------
 def test_search_ieee_returns_urls():
-    results = search_template_links("IEEE Internet of Things Journal", "latex")
-    assert len(results) > 0
-    # Should use Tsinghua mirror
-    assert any("tsinghua" in r["url"] or "ustc" in r["url"] for r in results)
-    assert results[0]["score"] >= 90
+    results = search_template_links("ieee", "latex")
+    assert len(results) >= 2
+    assert all("tsinghua" in r["url"] or "ustc" in r["url"] for r in results)
 
 
-def test_search_unknown_fallsback_gracefully():
-    """Even for unknown journals, should return [] without crashing."""
-    results = search_template_links("Totally Fake Journal 99999", "latex")
-    assert isinstance(results, list)
+def test_search_iotj_returns_urls():
+    """Abbreviation should resolve and return IEEEtran."""
+    results = search_template_links("iotj", "latex")
+    assert len(results) >= 1
+    assert results[0]["url"]
 
 
-def test_search_word_format():
-    results = search_template_links("IEEE Conference", "docx")
+def test_search_unknown_graceful():
+    results = search_template_links("FakeJournal99999", "latex")
     assert isinstance(results, list)

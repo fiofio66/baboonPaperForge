@@ -85,12 +85,12 @@ async def agent_search(state: AgentState) -> dict:
     fmt = state.get("template_format", "latex")
 
     try:
-        candidates = await search_template_links(journal, fmt)
+        candidates = search_template_links(journal, fmt)
         if not candidates:
             _log(state, "SearchAgent: no results, trying broader query")
             # Fallback: broader search
-            candidates = await search_template_links(
-                f"{journal} official template cls sty", fmt, max_results=20
+            candidates = search_template_links(
+                f"{journal} official template cls sty", fmt
             )
 
         if not candidates:
