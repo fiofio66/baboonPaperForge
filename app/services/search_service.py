@@ -21,8 +21,8 @@ _JOURNAL_DB: list[dict] = [
                      "ieee signal processing", "ieee communications", "ieee power", "ieee t", "ieee trans on",
                      "ieee transactions on", "ieee 期刊", "ieee 论文"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/IEEEtran.zip",
-            "https://mirrors.ustc.edu.cn/CTAN/macros/latex/contrib/IEEEtran.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/IEEEtran.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/IEEEtran.zip",
         ],
     },
     {
@@ -30,8 +30,8 @@ _JOURNAL_DB: list[dict] = [
         "name": "IEEE Conference (IEEEconf)",
         "aliases": ["ieee conference", "ieee conf", "ieee 会议", "ieeecon"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/IEEEconf.zip",
-            "https://mirrors.ustc.edu.cn/CTAN/macros/latex/contrib/IEEEconf.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/IEEEconf.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/IEEEconf.zip",
         ],
     },
     {
@@ -39,8 +39,8 @@ _JOURNAL_DB: list[dict] = [
         "name": "ACM (acmart)",
         "aliases": ["acm", "acmart", "acm transactions", "acm sig", "acm conference", "acm journal"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/acmart.zip",
-            "https://mirrors.ustc.edu.cn/CTAN/macros/latex/contrib/acmart.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/acmart.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/acmart.zip",
         ],
     },
     {
@@ -50,7 +50,7 @@ _JOURNAL_DB: list[dict] = [
                      "information sciences", "ins", "expert systems with applications", "eswa",
                      "neurocomputing", "pattern recognition", "knowledge based systems", "kbs"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/elsarticle.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/elsarticle.zip",
         ],
     },
     {
@@ -59,7 +59,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["springer", "lncs", "llncs", "springer lncs", "lecture notes", "springer conference",
                      "springer journal"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/llncs.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/llncs.zip",
         ],
     },
     {
@@ -68,7 +68,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["nature", "nature journal", "nature communications", "nature comm", "nat comm",
                      "nature methods", "nature medicine", "nature physics", "scientific reports", "sci rep"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/nature.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/nature.zip",
         ],
     },
     {
@@ -76,7 +76,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "Science / AAAS",
         "aliases": ["science", "science journal", "aaas", "science advances"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/science.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/science.zip",
         ],
     },
     {
@@ -86,7 +86,7 @@ _JOURNAL_DB: list[dict] = [
                      "physical review letters", "physical review b", "physical review d", "physical review e",
                      "rev tex"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/revtex.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/revtex.zip",
         ],
     },
     {
@@ -94,7 +94,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "IOP Publishing (iopart)",
         "aliases": ["iop", "iop publishing", "iopart", "iop journal", "iop science", "iop conf"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/iopart.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/iopart.zip",
         ],
     },
     {
@@ -102,7 +102,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "AIP Publishing",
         "aliases": ["aip", "aip journal", "aip publishing", "applied physics letters", "apl", "journal of applied physics", "jap"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/aip.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/aip.zip",
         ],
     },
     {
@@ -111,7 +111,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["rsc", "rsc journal", "chemical communications", "chem comm", "rsc advances",
                      "chemical society", "journal of materials chemistry", "jmc"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/rsc.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/rsc.zip",
         ],
     },
     {
@@ -119,7 +119,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "American Mathematical Society (AMS)",
         "aliases": ["ams", "amsmath", "american mathematical", "ams journal", "jams", "proceedings ams", "math"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/amsmath.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/amsmath.zip",
         ],
     },
     {
@@ -127,7 +127,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "SAGE Publications",
         "aliases": ["sage", "sage journal", "sagepub", "sage publications"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/sage_latex_template.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/sage_latex_template.zip",
         ],
     },
     {
@@ -136,7 +136,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["wiley", "wiley journal", "wiley online", "advanced materials", "adv mater",
                      "angewandte chemie", "angew chem"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/wiley.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/wiley.zip",
         ],
     },
     {
@@ -144,7 +144,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "Taylor & Francis (tandf)",
         "aliases": ["taylor", "t&f", "taylor francis", "taylor & francis", "tandf", "t and f"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/tandf.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/tandf.zip",
         ],
     },
     {
@@ -152,7 +152,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "MDPI",
         "aliases": ["mdpi", "sensors mdpi", "applied sciences mdpi", "ijms", "ijerph", "mdpi journal"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/mdpi.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/mdpi.zip",
         ],
     },
     {
@@ -160,7 +160,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "SPIE",
         "aliases": ["spie", "spie journal", "optical engineering", "spie proceedings"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/spie.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/spie.zip",
         ],
     },
     # --- ML/AI conferences ---
@@ -169,7 +169,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "NeurIPS",
         "aliases": ["neurips", "nips", "neural information processing", "neurips conference"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/neurips.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/neurips.zip",
         ],
     },
     {
@@ -177,7 +177,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "ICML",
         "aliases": ["icml", "international conference on machine learning", "icml conference"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/icml.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/icml.zip",
         ],
     },
     {
@@ -186,7 +186,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["cvpr", "iccv", "computer vision and pattern recognition", "cvpr conference",
                      "international conference on computer vision", "eccv", "wacv"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/cvpr.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/cvpr.zip",
         ],
     },
     {
@@ -195,7 +195,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["acl", "emnlp", "naacl", "association for computational linguistics", "acl conference",
                      "eacl", "coling"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/acl.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/acl.zip",
         ],
     },
     {
@@ -203,7 +203,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "AAAI",
         "aliases": ["aaai", "aaai conference", "association for the advancement of artificial intelligence"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/aaai.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/aaai.zip",
         ],
     },
     {
@@ -211,7 +211,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "IJCAI",
         "aliases": ["ijcai", "international joint conference on artificial intelligence"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/ijcai.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/ijcai.zip",
         ],
     },
     {
@@ -219,7 +219,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "ArXiv",
         "aliases": ["arxiv", "arxiv preprint"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/arxiv.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/arxiv.zip",
         ],
     },
     {
@@ -227,7 +227,7 @@ _JOURNAL_DB: list[dict] = [
         "name": "自动化学报",
         "aliases": ["自动化学报", "acta automatica sinica", "automatica sinica", "aas"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/cas-latex-template.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/cas-latex-template.zip",
         ],
     },
     {
@@ -236,7 +236,7 @@ _JOURNAL_DB: list[dict] = [
         "aliases": ["计算机学报", "软件学报", "计算机研究与发展", "cjc", "jcr", "chinese journal of computers",
                      "journal of software", "jos"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/cjc-latex-template.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/cjc-latex-template.zip",
         ],
     },
     {
@@ -244,12 +244,12 @@ _JOURNAL_DB: list[dict] = [
         "name": "中国科学 / 科学通报",
         "aliases": ["中国科学", "科学通报", "science china", "science china information sciences", "scis"],
         "latex_urls": [
-            "https://mirrors.tuna.tsinghua.edu.cn/CTAN/macros/latex/contrib/science_china.zip",
+            "https://mirror.ctan.org/macros/latex/contrib/science_china.zip",
         ],
     },
 ]
 
-_TUNA_MIRROR = "https://mirrors.tuna.tsinghua.edu.cn/CTAN"
+_TUNA_MIRROR = "https://mirror.ctan.org"
 
 
 def list_all_journals() -> list[dict]:
@@ -387,13 +387,9 @@ def search_template_links(journal_name: str, template_format: str = "latex") -> 
         key = "latex_urls" if fmt in ("latex", "tex") else "word_urls"
         urls = entry.get(key) or entry.get("latex_urls", [])
         for i, url in enumerate(urls):
-            url = str(url)
-            if "ctan.org" in url:
-                path = url.split("ctan.org/", 1)[-1]
-                url = f"{_TUNA_MIRROR}/{path.lstrip('/')}"
             candidates.append({
-                "url": url,
-                "title": f"{entry['name']} — Template ({'mirror' if i>0 else 'primary'})",
+                "url": str(url),
+                "title": f"{entry['name']} — 模板 ({'备选' if i>0 else '首选'})",
                 "journal_name": entry["name"],
                 "journal_id": entry["id"],
                 "score": 100 - i * 5,

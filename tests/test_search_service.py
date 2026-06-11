@@ -65,7 +65,7 @@ def test_list_all_journals():
 def test_search_ieee_returns_urls():
     results = search_template_links("ieee", "latex")
     assert len(results) >= 2
-    assert all("tsinghua" in r["url"] or "ustc" in r["url"] for r in results)
+    assert all("ctan.org" in r["url"] for r in results)
 
 
 def test_search_iotj_returns_urls():

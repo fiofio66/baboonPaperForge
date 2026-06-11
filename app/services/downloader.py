@@ -21,7 +21,7 @@ from app.core.config import settings
 # Constants
 # ---------------------------------------------------------------------------
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
-DOWNLOAD_TIMEOUT = 180.0  # seconds — many template archives are 10-50MB
+DOWNLOAD_TIMEOUT = 600.0  # 10 min — CTAN archives can be slow from China
 CHUNK_SIZE = 64 * 1024  # 64 KB
 _USER_AGENT = (
     "Mozilla/5.0 (compatible; BaboonPaperForge/0.1; +https://github.com/fiofio66/baboonPaperForge)"
