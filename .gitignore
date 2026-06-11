@@ -123,8 +123,9 @@ output/
 downloads/
 
 # ============================================================
-# Node / Frontend (reserved for future Vue3 frontend)
+# Node / Frontend
 # ============================================================
 node_modules/
 .npm/
 dist-frontend/
+frontend/dist/
